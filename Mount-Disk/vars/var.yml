@@ -1,0 +1,2 @@
+disk_path : /dev/sdb
+mounted_path: data1   #mounted path

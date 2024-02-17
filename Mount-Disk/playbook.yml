@@ -1,0 +1,6 @@
+---
+- name: Ansible Playbook for Disk Mounting
+  host: all
+  become: yes
+  roles:
+    - Mount-Disk
