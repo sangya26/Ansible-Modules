@@ -1,0 +1,14 @@
+- name: Download certs
+  get_url: 
+    url: "https://your_url.com"
+    dest: "/tmp/ca.crt"
+
+
+- name: Add certificate to java keystore
+  community.general.java_cert:
+    keystore_path : /your/keystore_path
+    keystroe_pass: changeit
+    cert_alias: ca_crt
+    cert_path: /tmp/ca.crt
+    state: present
+    executable: /you/keytool_path

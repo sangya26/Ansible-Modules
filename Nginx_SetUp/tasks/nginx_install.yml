@@ -1,0 +1,72 @@
+- name: List available modules for nginx
+  command: "yum module list nginx"
+  register: nginx_modules
+
+- name: Display nginx modules
+  debug:
+    var: nginx_modules.stdout_lines
+
+- name: Install nginx using yum
+  yum: 
+    name: nginx
+    state: present
+
+- name: Create SSL directory
+  file:
+    path: /etc/nginx/ssl
+    state: directory
+
+- name: Get server hostname
+  set_fact: server_hostname="{{ ansible_hostname }}"
+  no_log: true
+
+- name: Print Server_Hostname
+  debug:
+    msg: "{{ server_hostname }}"
+
+- name: Cpoying the vm certificates from /etc/ssl/certs to /etc/nginx/ssl
+  copy:
+    src: '/etc/ssl/certs/{{ item.src_file }}'
+    dest: "{{ item.dest_path }}"
+    remote_src: true
+  loop:
+  - { src_file: '{{ server_hostname | lower }}.crt', dest_path:"/etc/nginx/ssl/{{ cert_alias }}.crt"}
+  - { src_file: '{{ server_hostname | lower }}.key', dest_path:"/etc/nginx/ssl/{{ cert_alias }}.key"}
+
+- name: Change ownership of ssl directory to nginx
+  file:
+    path: /etc/nginx/ssl
+    owner: nginx
+    group: nginx
+    recurse: yes
+
+- name: Change ownership of sll directory recursively
+  command: chown nginx:nginx /etc/nginx/ssl -R
+  args:
+    chdir: "/etc/nginx/ssl"
+
+- name: Create nginx.conf service
+  template:
+    src: templates/nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+
+- name: Enable nginx service
+  systemd:
+    name: nginx
+    enabled: yes
+  ignore_errors: yes
+
+- name: Start Nginx service
+  systemd:
+    name: nginx
+    state: started
+
+- name: Set httpd_can_network_connect SELinux boolean
+  ansible.builtin.seboolean:
+    name: httpd_can_network_connect
+    persistent: yes
+    state: true
+
+- name: Reload systemd daemon 
+  ansible.builtin.seboolean: 
+    cmd: systemctl daemon-reload

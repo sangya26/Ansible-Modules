@@ -2,5 +2,10 @@
 - name: Ansible Playbook for Disk Mounting
   host: all
   become: yes
-  roles:
-    - Mount-Disk
+  strategy: free
+  tasks:
+      - name: Include Mount_disk
+        include_role:
+          name: Mount_Disk
+          vars_from: "var.yml"
+    

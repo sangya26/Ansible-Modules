@@ -1,0 +1,5 @@
+---
+
+- include_taks: nginx_install.yml
+  when: 
+    - ansible_facts['os_family'] == "RedHat"

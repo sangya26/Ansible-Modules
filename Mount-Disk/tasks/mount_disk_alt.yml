@@ -10,42 +10,46 @@
     path: /dev/your_vol_group  #the name of the vol group
   register: vol_group
 
+- name: Check if your already partitioned disk is mounted to any path
+  stat:
+    path: /data #assuming the path that is mounted
+  register: data_status
+
 - name: Unmount the already mounted partiton
   mount:
     path: /{{ mounted_path }}
-    state: absent
+    state: ummounted
+  when: data3_status.stat.exists
 
 #considering your partition is in /dev/sdb1
 
 - name: Create a volume group on top of /dev/sdb1 if it doesn't exist
-  community.general.lvg:
+  lvg:
     vg: your_vol_group
     pvs: /dev/sdb1
+    state: present
   when: (raw_disk.stat.exists) and (not vol_group.stat.exists)
 
 - name: Create a logical volume in the volume group for the remaining space
-  community.general.lvol:
+  lvol:
     vg: your_vol_group
     lv: your_lv_name
     size: 100%FREE   #Utilizing all remaining space or you can specify the exact size
+    state: present
   when: (raw_disk.stat.exists) and (not vol_group.stat.exists)
 
 - name: Create file system for logical volume
-  community.general.filesystem:
+  filesystem:
     fstype: ext4
     dev: /dev/your_vol_group/your_lv_name
   when: (raw_disk.stat.exists) and (not vol_group.stat.exists)
 
-- name: Get UUID of the new logical volume
-  command: blkid -s UUID -o value /dev/your_vol_group/your_lv_name
-  register: uuid_result
-  when: (raw_disk.stat.exists) and (not vol_group.stat.exists)
-
 - name: Mount the new logical volume
-  ansible.posix.mount:
+  mount:
     path: /your_mount_point
-    src: UUID={{ uuid_result.stdout }}
+    src: /dev/your_vol_group/your_lv_name
     fstype: ext4
     state: mounted
+    opts: defaults
   when: (raw_disk.stat.exists) and (not vol_group.stat.exists)
 

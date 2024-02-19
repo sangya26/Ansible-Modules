@@ -1,0 +1,10 @@
+---
+- name: Ansible Playbook for Disk Mounting
+  host: all
+  become: yes
+  strategy: free
+  tasks:
+      - name: Include Nginx_SetUp
+        include_role:
+          name: Nginx_SetUp
+          vars_from: "var.yml"
