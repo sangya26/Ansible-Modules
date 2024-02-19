@@ -1,0 +1,48 @@
+- name: Check if CA WA agent is already install
+  win_service: 
+    name: CA WA Agent
+  register: service_status
+
+- name: Deploy Autosys
+  block:
+    - name: create dir
+      win_file:
+        path: "{{ path }}"
+        state: directory
+    
+    - name: downloading AutoSys packages
+      win_get_url: 
+        url: "{{ autosys_url }}"
+        dest: "{{ path }}"
+
+    - name: Unzip the packages
+      win_unzip: 
+        src: "{{ file_path[0] }}"
+        dest: "{{ path }}"
+      
+    - name: run autosys bat file
+      win_command: InstallOnly_R114_WIN.bat
+      args:
+        chdir: "{{ file_path[1] }}"
+
+    - name: Add the autosys user to local admin group
+      win_group_membership:
+        name: Administrators
+        members: "{{ autosys_user }}"
+        state: present
+
+    - name: Remove zip
+      win_file:
+        path: "{{ item }}"
+        state: absent
+      with_items: "{{ file_path }}"
+  when: not service_status.exists
+
+- name: check the service status
+  win_service:
+    name: CA WA Agent
+  register: result
+
+- name: Print status of service
+  debug:
+    var: result
