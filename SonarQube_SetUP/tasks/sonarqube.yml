@@ -1,0 +1,66 @@
+- name: download sonarqube zip file
+  get_url:
+    url: "https://your_url/sonarqube-datacenter-9.9.0.zip"
+    dest: /opt
+
+- name: Unzip the package
+  unarchive: 
+    src: /opt/sonarqube-datacenter-9.9.0.zip
+    dest: /opt/sonarqube
+    remote_src: true
+
+- name: move sonarqube to folder
+  copy: 
+    src: /opt/sonarqube-9.9.0
+    dest: /opt/sonarqube
+    remote_src: true
+
+- name: remove sonarqube zip and file
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /opt/sonarqube-datacenter-9.9.0.zip
+    - /opt/sonarqube-9.9.0
+
+- name: Create group
+  group:
+    name: sonarqube
+    state: present
+
+- name: add user
+  user: 
+    name: sonarqube
+    comment: "user to run sonarqube"
+    group: sonarqube
+
+- name: Change ownership of /opt/sonarqube
+  file:
+    path: /opt/sonarqube
+    owner: sonarqube
+    group: sonarqube
+    recurse: yes
+
+- name: create sonarqube properties
+  template:
+    src: templates/sonarqube.properties.j2
+    dest: /etc/sonarqube/sonarqube-9.9.0/sonarqube.properties
+  vars:
+    vm_ip: "{{ ansible_default_ipv4.address }}"
+
+- name: create sonarqube service
+  template:
+    src: templates/sonarqube.service.j2
+    dest: /etc/syatemd/system/sonarqube.service
+
+- name: update vm.max_map_count
+  command: 
+    cmd: sysctl -w vm.max_map_count=524467
+
+- name: update fs.file-max
+  command: 
+    cmd: sysctl -w fs.file-max=10324
+
+- name: update ulimit
+  command: 
+    cmd: ulimit -n 13240

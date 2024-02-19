@@ -1,0 +1,13 @@
+---
+
+- include_taks: sonarqube.yml
+  when: 
+    - ansible_facts['os_family'] == "RedHat"
+
+- include_taks: jmx_exporter.yml
+  when: 
+    - ansible_facts['os_family'] == "RedHat"
+
+- include_taks: node_exporter.yml
+  when: 
+    - ansible_facts['os_family'] == "RedHat"

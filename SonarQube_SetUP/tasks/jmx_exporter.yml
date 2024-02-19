@@ -1,0 +1,47 @@
+- name: Create JMX directory
+  file: 
+    path: /opt/jmx_exporter
+    state: directory
+
+- name: Set permission to JMX directory
+  file: 
+    path: /opt/jmx_exporter
+    state: directory
+    mode: '0755'
+
+- name: download jmx jar file
+  get_url:
+    url: "https://your_url.com/jmx_prometheus_javaagent-0.17.2.jar"
+    dest: /opt/jmx_exporter
+
+- name: Create config.yml file
+  template:
+    src: templates/config.yml.j2
+    dest: /opt/jmx_exporter/config.yml
+  
+- name: Create logging.properties file
+  template:
+    src: templates/logging.properties.j2
+    dest: /opt/jmx_exporter/logging.properties
+
+- name: Set permission for jmx_prometheus_javagaent
+  file: 
+    path: /opt/jmx_exporter/jmx_prometheus_javaagent-0.17.2.jar
+    mode: 0755
+
+- name: Set permission for config.yml
+  file: 
+    path: /opt/jmx_exporter/config.yml
+    mode: 0755
+
+- name: Set permission for logging.properties
+  file: 
+    path: /opt/jmx_exporter/logging.properties
+    mode: 0755
+
+- name: Change ownership of /opt/jmx_exporter directory
+  file:
+    path: /opt/jmx_exporter
+    owner: operator
+    group: operator
+    recurse: yes
