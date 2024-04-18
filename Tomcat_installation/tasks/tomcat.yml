@@ -1,0 +1,107 @@
+- name: check file
+  ansible.builtin.stat:
+    path: /opt/tomcat/bin/catalina.sh
+  register: status
+
+- name: install tomcat
+  block:
+    - name: install java
+      dnf:
+        name: java-1.8.0-openjdk-devel
+        state: present
+
+    - name: download apache tomcat
+      get_url:
+        url: "{{ tomcat_url }}"
+        dest: /opt
+        url_username: "{{ lookup('env','userid') }}"
+        url_password: "{{ lookup('env',"userpwd") }}"
+      register: package
+
+    - name: extract tomcat
+      unarchive: 
+        src: "{{ package.dest }}"
+        dest: "/opt"
+        remote_src: yes
+
+    - name: create tomcat directory
+      file:
+        path: /opt/tomcat
+        state: directory
+
+    - name: rename tomcat directory
+      copy:
+        src: /opt/apache-tomcat-8.5.95
+        dest: /opt/tomcat
+        remote_src: yes
+
+    - name: Add tomcat group
+      group: 
+        name: tomcat
+        state: present
+    
+    - name: Add tomcat user
+      user:
+        name: tomcat
+        group: tomcat
+        state: present
+        system: yes
+
+    - name: change ownership of tomcat directory
+      file: 
+        dest: /opt/tomcat
+        owner: tomcat
+        group: tomcat
+        recurse: yes
+        mode: 0777
+
+    - name: create a file tomcat.service
+      file:
+        path: /etc/systemd/system/tomcat.service
+        state: touch
+        mode: 0777
+
+    - name: stop tomcat
+      shell:  |
+        ./catalina.sh stop
+      args:
+        chdir: /opt/tomcat/bin
+
+    - name: remove temporary directory
+      file:
+        path: "{{ package.dest }}"
+        state: absent
+
+    - name: copy certificates
+      copy:
+        src: /etc/ssl/certs/{{ ansible_hostname | lower }}.crt
+        src: /etc/ssl/certs/{{ ansible_hostname | lower }}.cer
+        remote_src: yes
+
+    - name: check if cert is imported previously
+      ansible.builtin.stat:
+        path: /etc/ssl/certs/{{ ansible_hostname | lower }}.abc.com.jks
+      register: cert_check
+
+    - name: create p12 cert file
+      shell: |
+        openssl pkcs12 -export -inkey "{{ ansible_hostname | lower }}.key" -in "{{ ansible_hostname | lower }}.cer" -out
+        "{{ ansible_hostname | lower }}.p12" -name "{{ ansible_hostname | lower }}.abc.com" -password pass:"{{ ansible_hostname | lower }}"
+        keytool -importkeystore -srckaystore {{ ansible_hostname | lower }}.p12 -srcstoretype pkcs12 -srcalias {{ ansible_hostname | lower }}.abc.com
+        -destkeystore {{ ansible_hostname | lower }}.abc.com.jks -deststoretype jks -deststorepass {{ ansible_hostname | lower }}
+        -destalias {{ ansible_hostname | lower }}.abc.com -srcstorepass {{ ansible_hostname | lower }}
+      args:
+        chdir: /etc/ssl/certs
+      when: not cert_check.stat.exists
+
+    - name: place server.xml with cert config
+      template: 
+        src: server.xml.j2
+        dest: /opt/tomcat/conf/server.xml
+
+    - name: start tomcat
+      shell: |
+        ./catalina.sh start
+      args:
+        chdir: /opt/tomcat/bin
+when: not status.stat.exists
