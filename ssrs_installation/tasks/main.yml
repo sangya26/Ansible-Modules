@@ -1,0 +1,5 @@
+---
+- name: ssrs_installation
+  include_task: ssrs_installation.yml
+  when: 
+    - ansible_facts['os_family'] == "WindowsOS"

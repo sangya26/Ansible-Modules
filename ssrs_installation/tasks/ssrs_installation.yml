@@ -1,0 +1,21 @@
+- name: download the ssrs package from your artifactory
+  win_get_url:
+    url: "{{ url }}"
+    dest: '{{ directory }}{{ folder_path }}'
+    username: username
+    password: password
+  become: yes
+  become_method: runas
+  vars:
+    ansible_become_user: username
+    ansible_become_passwword: password
+
+- name: executing DB connection exe & msi files
+  win_shell: "{{ item }}"
+  args:
+    chdir: '{{ directory }}{{ folder_path }}'
+  loop:
+  - '.\SQLServerReportingServices.exe /quiet /IAcceptLicenseTerms /Edition=Dev'
+
+- name: restart windows vm
+  wind_reboot:
