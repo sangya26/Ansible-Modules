@@ -1,0 +1,36 @@
+- name: create a file tomcat.service
+  file: 
+    path: /etc/systemd/system/tomcat.service
+    state: touch
+    mode: 0777
+
+- name: stop tomcat
+  command: "./catalina.sh stop -force"
+  args:
+    chdir: /opt/tomcat/bin
+
+- name: get any unning tomact process
+  shell: "ps -ef | grep -v grep | grep -w tomcat | awk '{print $2}"
+  register: running_processes
+
+- name: kill running processes
+  shell: "kill {{ item }}"
+  with_items: "{{ running_processes.stdout_lines }}"
+
+- name: slepp for 100s and continue with play
+  wait_for:
+    timeout: 60
+
+- name: start tomcat
+  command: ./cataline.sh start
+  args:
+    chdir: /opt/tomcat/bin
+
+- name: get any unning tomact process
+  shell: "ps -ef | grep -v grep | grep -w tomcat | awk '{print $2}"
+  register: running_processes_upd
+
+- name: validating tomcat process
+  debug:
+    msg: "Tomcat started successfully"
+  when: running_processes_upd is defined
