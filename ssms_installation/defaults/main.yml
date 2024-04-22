@@ -1,0 +1,4 @@
+reg_path: HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server
+ssms_path: ssms
+url: www.artifactory.com/sqlservermanagementstudio.exe
+installer_path: D:\

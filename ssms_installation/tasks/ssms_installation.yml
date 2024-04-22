@@ -1,0 +1,24 @@
+- name: ssms check
+  win_reg_stat:
+    path: "{{ reg_path }}"
+  register: ssms_status
+
+- name: ssms install block
+  block:
+    - name: create dir
+      win_file:
+        path: "{{ ssms_path }}"
+        stste: directory
+
+    - name: download Smonik DMS package fro artifactory
+      win_get_url:
+        url: "{{ url }}"
+        dest: "{{ ssms_path }}"
+        username: user
+        password: password
+
+    - name: install ssms
+      win_command: "{{ package_name }} /install /quiet /norestart"
+      args:
+        chdir: "{{ installer_path }}"
+  when: not ssms_status.exist
