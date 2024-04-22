@@ -1,0 +1,36 @@
+- name: create installer folder
+  win_file:
+    path: "{{ dest }}"
+    state: directory
+
+- name: copy installers
+  block:
+    - name: download installer
+      win_get_url:
+        url: "{{ sql_server_installer_url }}"
+        dest: './{{ sql_server_installer }}'
+      delegate_to: localhost
+
+    - name: copy to destination
+      copy:
+        src: './{{ sql_server_installer }}'
+        dest: "{{ dest }}\\"
+
+- name: copy configuration file
+  win_template:
+    src: "templates/{{ sql_server_conf }}"
+    dest: "{{ dest }}\\{{ sql_server_conf | regex_replace('.j2','') }}"
+    force: yes
+
+- name: executing exe and msi files
+  win_command: " {{ dest }}\\{{ sql_server_installer }} /Q /IACCEPTSQLSERVERLICENSETERMS /ACTION=''install' /ConfigurationFile={{ dest }}\\{{ sql_server_conf | regex_replace('.j2','') }} /IAcceptServerLicenseTerms"
+  become: yes
+  become_method: runas
+  vars:
+    ansible_user: user
+    ansible_password: password
+    
+- name: delete installer
+  win_file:
+    path: "{{ dest[:-1] }}"
+    state: absent

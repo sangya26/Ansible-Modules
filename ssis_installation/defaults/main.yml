@@ -1,0 +1,4 @@
+dest: "C:\\ssis_temp"
+sql_server_installer_url: "www.url.com/../SQL2022-SSEI-Dev.exe"
+sql_server_installer: "{{ sql_server_installer_url.split('/')[-1]}}"
+sql_server_conf: "ConfigurationFile.ini.j2"
