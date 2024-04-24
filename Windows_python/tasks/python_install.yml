@@ -1,0 +1,77 @@
+- name: download python installer
+  win_get_url: 
+    url: "{{ python_url }}"
+    dest: "{{ destination_file_path }}"
+    url_username: "username"
+    url_password: "password"
+
+- set_fact:
+    installer_name: "{{ python_url.split('/')[-1] }}"
+
+- name: install python
+  win_package:
+    path: "{{ destination_file_path }}\\{{ installer_name }}"
+    arguments:
+    - /i
+    - /quiet
+    - PrependPath=1
+    - Include_doc=1
+    - Include_pip=1
+    - Include_tcltk=1
+    - Include_test=1
+    - InstallAllUsers=1
+
+- name: delete installer file
+  win_file:
+    path: "{{ destination_file_path }}\\{{ installer_name }}"
+    state: present
+
+- name: setup cert file
+  block:
+    - name: ssl cert environment variable
+      win_environment:
+        state: present
+        name: SSL_CERT_FILE
+        value: "{{ destination_file_path }}\\ca_chain.crt"
+        level: machine
+    
+    - name: check cert file
+      win_stat:
+        path: "{{ destination_file_path }}\\ca_chain.crt"
+      register: cert_stat
+
+    - name: create cert file
+      win_shell: |
+        Function Add-Cert {
+          param($path, $cert)
+          curl.exe -k https://hashicorpvault.dns.com/v1/certifications/cert-download/issuer/$cert/pem | Out-File -Encoding ASCII -Append $path
+        }
+
+        Remove-Item $env:SSL_CERT_FILE -ErrorAction Ignore
+        Add-Cert $env:SSL_CERT_FILE xxx-root
+        Add-Cert $env:SSL_CERT_FILE xxx-issuing
+        Add-Cert $env:SSL_CERT_FILE yyy-root-ca
+        Add-Cert $env:SSL_CERT_FILE yyy-intermediate-ca-1
+        Add-Cert $env:SSL_CERT_FILE yyy-intermediate-ca-2
+
+      when:
+        - not cert_stat.stat.exists
+
+
+- name: create pip config
+  block:
+    - name: create environment variables
+      win_environment:
+        state: present
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+        level: machine
+      with_items:
+        - { name: "REQUESTS_CA_BUNDLE ", value: "{{ destination_file_path }}\\ca_chain.crt"}
+        - { name:  "PIP_CONFIG_FILE", VALUE: "{{ destination_file_path }}\\pip.conf"}
+
+    - name: create pip.conf file
+      win_template:
+        src: "pip.j2"
+        dest: "{{ destination_file_path }}\\pip.conf"
+

@@ -1,0 +1,4 @@
+[global]
+index-url=https://artifactory.dns.com/artifactory/api/pypi/anon-pypi.pythom.org/simple
+extra-index-url=https://{{lookup('environment', 'ARTIFACTORY_ID') }}:{{lookup('environment', 'ARTIFACTORY_PW') }}@artifactory.dns.com/artifactory/api/pypi/anon-pypi.pythom.org/simple
+cert={{ destination_file_path | regex_replace('\\\\','/) }}/ca_chain.crt
