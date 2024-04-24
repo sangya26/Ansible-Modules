@@ -1,0 +1,5 @@
+oledb_urls: [
+  {url: "https://artifactory.dns.com/artifactory/cloud-migration-softwares-snapshot/windows/RedistributeVisualC++/VC_redist.x64.exe", args: "/quiet"},
+  {url: "https://artifactory.dns.com/artifactory/cloud-migration-softwares-snapshot/windows/RedistributeVisualC++/VC_redist.x86.exe", args: "/quiet"},
+  {url: "https://artifactory.dns.com/artifactory/cloud-migration-softwares-snapshot/windows/drivers/OLEDB/msoledbsqlx64.msi", args: "/quiet IACCEPTMSOLEDBSQLLICENSETERMS=YES"}
+]

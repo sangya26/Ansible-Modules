@@ -1,0 +1,6 @@
+- include_tasks: oledb.yml
+  when:
+    - ansible_os_family == "Windows"
+    - install_oledb
+  with_items:
+    - "{{ oledb_urls }}"

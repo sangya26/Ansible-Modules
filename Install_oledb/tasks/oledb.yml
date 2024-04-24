@@ -1,0 +1,42 @@
+- name: check if already installed
+  block: 
+    - win_shell: (Get-WniObject -Class Win32_Product | Where-Object Name -like '*OLE DB DRiver 19*').Name
+      register: check_installation
+      async: 60
+
+    - set_fact:
+        install_oledb: "{{ not (check_installtion.stdout | regex_search('OLE DB Driver 19') == 'OLE DB Driver 19') }}"
+
+- name: get installtion directory 
+  block:
+    - win_shell: "echo $HOME"
+      register: user_home
+    
+    - set_fact:
+        base_dir: "{{ user_home.stdout_lines[-1] | trim }}"
+
+- set_fact:
+    install_file: "{{ item.url.split('/')[-1] }}"
+
+- name: download oledb installer
+  win_get_url:
+    url: "{{ item.url }}"
+    dest: "{{ base_dir }}\\{{ install_file }}"
+    url_username: "user"
+    url_password: "password"
+
+- name: install files
+  win_packages:
+    path: "{{ base_dir }}\\{{ install_file }}"
+    arguments: "{{ item.args }}"
+  async: 300
+  register: install_info
+
+- name: delete installer
+  win_file: 
+    path: "{{ base_dir }}\\{{ install_file }}"
+    state:absent
+
+- set_fact:
+    reboot_server: true
+  when: install_info.reboot_required
