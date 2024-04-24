@@ -1,0 +1,90 @@
+---
+
+- name: install azure requirements
+  pip:
+    requirements: '/usr/local/lib/python/dist/packages/ansible_collections/azure/requirements-azure.txt'
+  no_log: true
+  run_once: true
+  delegate_to: localhost
+
+- name: istalling iis
+  win_feature:
+    name: "{{ item }}"
+    state: present
+    include_management_tools: true
+    include_sub_features: true
+  with_items:
+    - Web-Common-Https
+    - Web-Http-Loggig
+    - Web-Log-Libraries
+    - Web-Request-Monitor
+    - Web-Http_Tracing
+    - Web-Stat-Compression
+    - Web-Filtering
+    - Web-Basic-Auth
+    - Web-CertProvider
+    - Web-Client-Auth
+    - Web-Digest-Auth
+    - Web-Cert-Auth
+    - Web-IP-Security
+    - Web-Url-Auth
+    - Web-Windows-Auth
+    - Web-Net-Ext45
+    - Wev-ASP
+    - Web-Asp-Net45
+    - Web-CGI
+    - Web-ISAPI-Ext
+    - Web-ISAPI-Filter
+    - Web-Includes
+    - Web-Mgmt-Tools
+
+
+- name: start w3c logging
+  win_service: 
+    name: W3SVC
+    start_mode: auto
+    state: started
+
+- name: set feature delegation
+  win_shell: "Set-WebConfiguration /system.WebServer/Security/Authentication/{{ item }} -metadata overrideMode -value Allow -PSPath IIS:/"
+  with_items: "{{ feature_delegations }}"
+
+- name: get secrets
+  azure.azcollection.azure_rm_keyvaultsecret_info:
+    vault_uri: "{{ akv_url }}"
+    name: "{{ id }}"
+    subscription_id: "{{ lookup('environment', 'ARM_SUBSCRIPTION_ID') }}"
+    clent_id: "{{ lookup('environment', 'ARM_CLIENT_ID') }}"
+    secret: "{{ lookup('environment', 'ARM_CLIENT_SECRET') }}"
+    tenant: "{{ lookup('environment', 'ARM_TENANT_ID') }}"
+  register: get_secrets
+  delegate_to: localhost
+
+- name: get all certificates from store
+  community.windows.win_certificate_info:
+    store_name: My
+  register: all_certificates
+  no_log: true
+
+- name: extract ssl certificate info
+  set_fact: 
+    certificate_thumbprint: "{{ item.thumbprint }}"
+  when: item.issued_to | regex_search(server_name) == server_name
+  with_items:
+    - "{{ all_certificates.certificates }}"
+  no_log: true
+
+- name: change the iis authentication
+  win_shell: Set-WebConfiguration /system.webServer/security/authentication/anonymousAuthentication -metadata override -value Allow -PSPath IIS:/
+
+- name: change the iis authentication
+  win_shell: Set-WebConfigurationProperty -Filter '/system.webserver/security/authentication/anonymousAuthentication -Name 'userName' -value '' -PSPath 'IIS:'
+  ignore_errors: true
+
+- name: add the id to local admin group
+  win_group_membership:
+    name: Administrators
+    members:
+      - "xx\\{{ id }}"
+    state: present
+  

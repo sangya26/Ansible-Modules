@@ -1,0 +1,7 @@
+akv_url: ""
+id: ""
+feature_delegation: ["anonymousAuthentication", "windowsAuthentication", "formsAuthentication"]
+install_info: [
+  {directory_path: "", site_name: "website_name", port_no: 8080, protocol: "http", hostname: "//dns alias//"},
+  {directory_path: "", site_name: "website_name", port_no: 8080, protocol: "https", hostname: "//dns alias//"}
+]

@@ -1,0 +1,13 @@
+---
+
+- name: install_iis
+  include_tasks: install_iis.yml
+  when:
+    - ansible_os_family == "Windows"
+
+- name: setup website
+  include_tasks: setup website.yml
+  when:
+    - ansible_os_family == "Windows"
+  with_items:
+    - "{{ install_info }}"

@@ -1,0 +1,58 @@
+- name: create a new application pool in started state
+  win_iis_webapppool:
+    name: "{{ item.site_name }}"
+    state: started
+    attributes: 
+      managedPipelineMode: Integrated
+      processModel.identityType: SpecificUser
+      processModel.userName: "xx\\{{ id }}"
+      processModel.password: "{{ get_secrets.secret.0.secret }}"
+      processModel.loadUserProfile: "True"
+      auto_start: yes
+
+- name: remove default website
+  win_iis_website:
+    name: "Default Web Site"
+    state: absent
+    application_pool: "DefaultAppPool"
+
+- name: create website directory
+  win_file:
+    path: "{{ item.directory_path }}"
+    state: directory
+
+- name: create iis site
+  win_iis_website:
+    name: "{{ item.site_name }}"
+    state: started
+    application_pool: "{{ item.site_name }}"
+    physical_path: "{{ item.directory_path}}"
+
+- name: Add a HTTPS binding
+  community.windows.win_iis_webbinding:
+    name: "{{ item.site_name }}"
+    protocol: "{{ item.protocol }}"
+    port: "{{ item.port_no }}"
+    host_header: "{{ item.host_name }}.dns.com"
+    certificate_path: "{{ certificate_thumbprint }}"
+    state: present
+  when:
+    - item.protocol == 'https'
+
+- name: Add a HTTP binding
+  community.windows.win_iis_webbinding:
+    name: "{{ item.site_name }}"
+    protocol: "{{ item.protocol }}"
+    host_header: "{{ item.host_name }}.dns.com"
+    port: "{{ item.port_no }}"
+    state: present
+  when:
+    - item.protocol == 'http'
+
+- name: removing default binding
+  win_shell: Remove-IISSiteBinding -Name "{{ item.site_name }}" -BindingInformation "*:80:" -Confirm:$false
+
+- name: restart application
+  win_iis_webapppool:
+    name: "{{ item.site_name }}"
+    state: restarted
