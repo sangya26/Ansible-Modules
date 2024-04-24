@@ -1,0 +1,16 @@
+- name: download odbc 18
+  get_url:
+    url: "{{ odbc_url }}"
+    dest: "./{{ install_file }}"
+  delegate_to: localhost
+
+- name: copy installer to vm
+  win_copy: 
+    src: "./{{ install_file }}"
+    dest: "C:\\{{ install_file }}"
+
+- name: Install ODBC driver
+  win_package:
+    path: "C:\\{{ install_file }}"
+    arguments: 'IACCEPTMSODBCSQLLICENSETERMS=YES /qn'
+  async: 300

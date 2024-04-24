@@ -1,0 +1,2 @@
+install_file: "msodbcsql.msi"
+odbc_url: "https://download.microsoft.com/../../msodbcsql.msi"
