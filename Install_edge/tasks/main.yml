@@ -1,0 +1,12 @@
+- name: download jfrog package
+  win_get_url:
+    url: "{{ url }}"
+    dest: "{{ path }}"
+    url_username: "user"
+    url_password: "password"
+
+- name: install microsoft edge
+  win_command: msiexec.exe /i MicrosoftEdgeEnterpriseX64.msi /qn
+  args: 
+    chdir: "{{ path }}"
+  async: 120
