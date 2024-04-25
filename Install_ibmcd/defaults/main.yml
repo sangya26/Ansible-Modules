@@ -1,0 +1,5 @@
+ibmcd_url: "https://../imbcd"
+package_dest: "D:\\IBMCD"
+exe_file: "CD_Installer.exe"
+log_file: "scriptLog.txt"
+cd_install_log: "cdWinInstall.log"

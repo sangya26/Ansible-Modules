@@ -1,0 +1,72 @@
+- name: check if already exists
+  block:
+    - win_shell: (Get-WmiObject -Class Win32_Product | Where-Object Name -Match 'IBM Connect:Direct').Name
+      register: check_installation
+      async: 60
+
+    - set_fact:
+        install_ibmcd: "{{ not (check_installation.stdout | regex_search('IBM Connect:Direct') == 'IBM Connect:Direct') }}"
+
+- name: create package destination folder
+  win_file: 
+    path: "{{ package_dest }}"
+    state: directory
+  when: 
+    - install_ibmcd
+
+- name: download package
+  win_shell: "Invoke-WebRequest {{ ibmcd_url }} -OutFile {{ package_dest}}\\test.zip"
+  when: 
+    - install_ibmcd
+  async: 120
+
+- name: unzip package
+  win_unzip: 
+    src: "{{ package_dest }}\\test.zip"
+    dest: "{{ package_dest }}"
+    delete_archive: true
+  when:
+    - install_ibmcd
+  async: 120
+
+- set_fact:
+    file_name: "{{ package_dest }}\\installCDWindows.ps1"
+
+- name: force installation on C drive
+  win_shell: (Get-Content "{{ file_name }}").replace('D:\Program Files', 'C:\Program Files') | Set-Content -Path "{{ file_name }}" -Encoding Ascii
+  become: true
+  become_method: ansible.builtin.runas
+  become_user: SYSTEM
+  async: 100
+  when:
+    - install_ibmcd
+
+- name: install ibmcd 
+  win_shell: "{{ file_name }}"
+  args:
+    chdir: "{{ package_dest }}"
+  become: true
+  become_method: ansible.builtin.runas
+  become_user: "{{ ansible_user }}"
+  async: 2400
+  register: install_info 
+  when:
+    - install_ibmcd
+
+- win_shell: "cat {{ package_dest }}\\cdWinInstall.log"
+  when:
+    - install_ibmcd
+    - (instll_info.stdout | regex_search('failed') == 'failed')
+
+- fail:
+    msg: "IBMCD installtion failed. Installation logs are being displayed in the prevous task "
+  when:
+    - install_ibmcd
+    - (instll_info.stdout | regex_search('failed') == 'failed')
+
+- name: delete installer
+  win_file:
+    path: "{{ package_dest }}"
+    state: absent
+  when:
+    - install_ibmcd
