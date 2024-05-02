@@ -1,0 +1,79 @@
+---
+
+- name: create a directory
+  win_file:
+    path: "{{ item }}"
+    state: directory
+  loop: 
+    - "D:\\install"
+
+- name: copy installer to target VM
+  win_copy: 
+    src: "Forgerock_dotnet_installation.zip"
+    dest: "{{ fr_directory }}\\Forgerock_dotnet_installation.zip"
+
+- name: unzip installer
+  win_unzip:
+    src: "{{ fr_directory }}\\Forgerock_dotnet_installation.zip"
+    dest: "{{ fr_directory }}"
+    delete_archive: yes
+
+- name: copy instll to install directory  
+  win_copy:
+    src: "{{ fr_directory }}\\Forgerock_dotnet_installation\\"
+    dest: "D:\\"
+    remote_src: true
+
+- name: set the environment varibale
+  win_environment:
+    state: present
+    name: AM_SYSTEM_LOG_SIZE
+    value: "{{ AM_SYSTEM_LOG_SIZE_VALUE }}"
+    level: machine
+
+- name: add maxFieldLength registry entry
+  win_regedit:
+    path: HKLM:\SYSTEM\CurrentControlSet\service\HTTP\Parameters
+    name: MaxFieldLength
+    data: 0x0000fffe
+    type: dword
+
+- name: add maxRequestBytes registery entry
+  win_regedit:
+    path: HKLM:\SYSTEM\CurrentControlSet\services\HTTP\Parameters
+    name: MaxRequestBytes 
+    data: 0x01000000
+    type: word
+
+- name: add the installtion password to installation directory
+  win_lineinfile:
+    path: "D:\\forgerock\\pwd.txt"
+    line: "{{ password }}"
+
+- name: install forgerock agent
+  win_shell: D:\forgerock\iis_agent\bin\agentadmin.exe --s "{{ site_id }}" "{{ AM_Console }}" "{{ Agent_URL }}"
+             "{{ Realm }}" "{{ Agent_Name }}" "D:\forgerock\pwd.txt" --acceptLicence
+
+
+- name: grant 'read and execute' rights to users
+  ansible.windows.win_acl:
+    path: 'D:\\forgerock'
+    user: 'users'
+    rights: ReadAndExecute
+    type: allow
+    state: present
+    inherit: ConatinerInherit, ObjectInherit
+    propagation: 'None'
+
+- name: Unlock system.webServer/modules section
+  win_shell: |
+    $section = "system.webServer/modules"
+    $configPath = "MACHINE/WEBROOT/APPHOST"
+    & "$env:SystemRoot\System32\inetsrv\appcmd" unlock config -section:$section -commitpath:$configPath
+  register: unlock_result
+
+- name: delete a file 
+  file: 
+    path: "D:\\forgerock\\pwd.txt"
+    state: present
+

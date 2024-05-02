@@ -30,8 +30,8 @@
     dest: "{{ item.dest_path }}"
     remote_src: true
   loop:
-  - { src_file: '{{ server_hostname | lower }}.crt', dest_path:"/etc/nginx/ssl/{{ cert_alias }}.crt"}
-  - { src_file: '{{ server_hostname | lower }}.key', dest_path:"/etc/nginx/ssl/{{ cert_alias }}.key"}
+  - { src_file: '{{ server_hostname | lower }}.crt', dest_path:"/etc/nginx/ssl/{{ cert_alias }}.crt" }
+  - { src_file: '{{ server_hostname | lower }}.key', dest_path:"/etc/nginx/ssl/{{ cert_alias }}.key" }
 
 - name: Change ownership of ssl directory to nginx
   file:
