@@ -1,0 +1,73 @@
+- name: check if already insatlled
+  win_stat:
+    path: "C:\\ProgramFiles\\Simab Hive ODBC Drivers"
+  register: folder_info
+
+- name: install driver 
+  block: 
+    - name: create directory
+      win_file: 
+        path: "{{ path }}"
+        state: directory
+
+    - name: download simba hive odbc driver 
+      win_get_url: 
+        url: "{{ odbc_driver_url }}"
+        dest: "{{ path }}"
+        url_username: "user"
+        url_password: "password"
+
+    - name: running msi file 
+      win_command: msiexec.exe /i "{{ install_file }}" /qn
+      args:
+        chdir: "{{ path }}"
+      async: 120
+      become: true
+      become_method: runas
+      become_user: SYSTEM
+
+    - name: delete file 
+      win_file:
+        path: "{{ path }}"
+        state: absent
+  when: not folder_info.exists
+
+- name: download simba hive odbc driver license
+  win_get_url: 
+    url: "{{ odbc_license_url }}"
+    dest: "C:\\ProgramFiles\\Simba Hive ODBC Driver\\lib"
+    url_username: "user"
+    url_password: "password"
+
+- name: download pem file 
+  win_get_url: 
+    url: "{{ odbc_pem_url }}"
+    dest: "C:\\ProgramFiles\\Simba Hive ODBC Driver\\lib"
+    url_username: "user"
+    url_password: "password"
+
+- name: check if DSN already exists 
+  win_shell: Get_OdbcDsn -Name {{ item.name }}
+  register: odbc_result
+  become: true
+  become_method: runas
+  become_user: SYSTEM
+  ignore_errors: true
+
+- name: create DSN 
+  win_shell: "Add-OdbcDsn -Name {{ item.name }} -DriverName '{{ item.Driver }}' -DsnType {{ item.dsntype }}"
+  become: true
+  become_method: runas
+  become_user: SYSTEM
+  when: odbc_result.stderr != ""
+
+- name: set properties for DSN 
+  win_shell: "Set-OdbcDsn -Name {{ item.name }} -DsnType {{ item.dsntype }} -setPropertyValue TrustedCerts='{{ item.trustedcerts }}',KrbServiceName={{ item.krbservicename }},Host={{ item.host }},
+              KrbHostFQDN={{ item.krbhostfqdn }}, KrbRealm={{ item.krbrealm }}, Port={{ item.port }}, Schema={{ item.schema }}, UseNativeQuery={{ item.usenativequery }}, hiveServerType={{ item.hiveservertype }}
+              AuthMech={{ item.authmech }}, ThriftTransport={{ item.thrifttransport }}, SSL={{ item.ssl }}, AllowSelfSignedServerCert={{ item.allowselfsignedservercert }}, GetTableWithQuery={{ item.gettablewithquery }}
+              AllowHostNameCNMismatch={{ item.caissuedcertnamemismatch }}, ServicePrincipalCanonicalization={{ item.canonicalization }}, DESCRIPTION={{ item.description }}, HTTPPath={{ item.httppath }}"
+  become: true
+  become_method: runas
+  become_user: SYSTEM
+
+

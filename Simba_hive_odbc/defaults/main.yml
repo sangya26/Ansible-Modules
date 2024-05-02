@@ -1,0 +1,7 @@
+odbc_driver_url: "" 
+odbc_license_url: "" 
+odbc_pem_url: "" 
+install_file: "SimbaHiveODBCDriver2.6_64-bit.msi"
+license_path: C:\Temp\SimbaApacheHiveODBCDriver.lic
+install_dir: C:\\ProgramFiles\\Simba Hive ODBC Driver\\lib\\SimbaApacheHiveODBCDriver.lic 
+path: C:\Temp

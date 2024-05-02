@@ -1,0 +1,25 @@
+connection_string: [
+  {
+    name: "",
+    dsntype: "",
+    description: "",
+    driver: "",
+    trustedcerts: "",
+    krbservicename: "",
+    canonicalization: "",
+    httppath: "",
+    host: "",
+    krbhostfqdn: "",
+    krbrealm: "",
+    port: "",
+    schema: "",
+    usenativequery: "",
+    hiveeservertype: "",
+    authmech: "",
+    thriftransport: "",
+    ssl: "",
+    allowselfsignedservercert: "",
+    caissuedcertnamemismatch: "",
+    gettableswithquery: ""
+  }
+]
