@@ -1,0 +1,31 @@
+- name: get secrets
+  azure.azcollection.azure_rm_keyvaultsecret_info:
+    vault_uri: "{{ key_vault_uri }}"
+    name: "{{ item }}-secret"
+    subscription_id: "sub id"
+    client_id: "client id"
+    secret: "secre"
+    tenant: "tenant"
+  register: get_secrets
+  delegate_to: localhost
+
+- name: login access 
+  win_group_membership: 
+    name: 'Administrators'
+    members: 
+      - "AB\\{{ id }}"
+
+- name: mount fileshare 
+  win_mapped_drive: 
+    letter: "{{ mount_drive_letter }}"
+    path: \\{{ storage_account}}\{{fileshare}}
+  vars:
+    ansible_become: true
+    ansible_become_method: runas 
+    ansible_become_user: "user"
+    ansible_become_password: "password"
+  
+
+
+
+

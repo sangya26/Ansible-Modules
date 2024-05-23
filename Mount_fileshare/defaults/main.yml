@@ -1,0 +1,5 @@
+package_url: <path>
+mount_drive_letter: <letter>
+storage_account: <storage account address>
+fileshare: <fileshare name>
+key_vault_uri: <uri>

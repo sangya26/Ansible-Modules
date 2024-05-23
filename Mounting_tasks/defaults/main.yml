@@ -1,0 +1,5 @@
+directory: <your directory>
+mount_drive_letter: <drive letter>
+artifactory_url: <your url>
+folder_name: <your_foler_name>
+mount_fileshare: <fileshare_name>

@@ -1,0 +1,22 @@
+- name: mount and copy files from fileshare 
+  win_shell: net use {{ mount_drive_letter }} {{ fileshare }} {{ password }} /user:AB\{{ id }} /persistent:yes | xcopy {{ mount_drive_letter }}\path\ {{ directory }}\path_temp \h \c \k \e \r \y 
+
+- name: accessing and creating folder in fileshare 
+  win_file: 
+    path: '{{ fileshare }}\path'
+    state: directory
+  become: true
+  become_method: runas 
+  vars:
+    ansible_become_user: 'user'
+    ansible_become_password: 'password'
+
+- name: find the lastest file in fileshare 
+  win_find:
+    paths: '{{ fileshare }}\path' 
+  become: true
+  become_method: runas 
+  vars:
+    ansible_become_user: 'user'
+    ansible_become_password: 'password'
+  register: success_file
