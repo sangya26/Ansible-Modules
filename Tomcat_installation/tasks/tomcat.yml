@@ -15,7 +15,7 @@
         url: "{{ tomcat_url }}"
         dest: /opt
         url_username: "{{ lookup('env','userid') }}"
-        url_password: "{{ lookup('env',"userpwd") }}"
+        url_password: "{{ lookup('env','userpwd') }}"
       register: package
 
     - name: extract tomcat
@@ -75,7 +75,7 @@
     - name: copy certificates
       copy:
         src: /etc/ssl/certs/{{ ansible_hostname | lower }}.crt
-        src: /etc/ssl/certs/{{ ansible_hostname | lower }}.cer
+        dest: /etc/ssl/certs/{{ ansible_hostname | lower }}.cer
         remote_src: yes
 
     - name: check if cert is imported previously
@@ -104,4 +104,4 @@
         ./catalina.sh start
       args:
         chdir: /opt/tomcat/bin
-when: not status.stat.exists
+  when: not status.stat.exists

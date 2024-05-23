@@ -1,0 +1,73 @@
+# to promote the package to release url from snapshot url
+
+- name: create directory
+  file: 
+    path: "./promote"
+    state: directory
+  delegate_to: localhost
+
+- name: get latest package
+  uri:  
+    url: "{{ item.snapshot_url }}?lastModified"
+    url_username: "user"
+    url_password: "password"
+    return_content: true
+    force_basic_auth: true
+  register: latest_package
+  delegate_to: localhost
+
+- set_fact:
+    job_link: "{{ (latest_package.content | from_yaml).uri.split('/')[:-1] | join('/') }}"
+
+- set_fact:
+    parent_folder: "{{ job_link.split('/')[-1] }}"
+
+- name: get all packages in the job_link.split
+  uri: 
+    url: "{{ job_link }}"
+    url_username: "user"
+    url_password: "password"
+    return_content: true
+    force_basic_auth: true
+  register: latest_package
+  delegate_to: localhost
+
+- name: download packages from artifactory
+  get_url:
+    url: "{{ job_link | regex_replace('api/storage/','') }}{{ current_item.uri }}"
+    dest: './promote'
+    url_username: "user"
+    url_password: "password"
+  loop: "{{ (all_pacakges.content | from_yaml).children }}"
+  loop_control:
+    loop_var: curr_item
+  register: download_packages
+  delegate_to: localhost
+
+- name: upload files to release folder 
+  block:
+    - name: upload files
+      uri: 
+        url: "{{ item.release_url }}{{ parent_folder }}2{{ curr_item.curr_item.uri }}"
+        src: "{{ curr_item.dest }}"
+        method: PUT
+        force_basic_auth: true
+        url_username: "user"
+        url_password: "password"
+        status_code: [200,201]
+      loop: "{{ download_packages.results }}"
+      loop_control: 
+        loop_var: curr_item
+      delegate_to: localhost
+
+  rescue:
+    - debug:
+        msg: "{{ ansible_failed_result }}"
+      delegate_to: localhost
+
+    - name: error while uploading
+      debug:
+        msg: "File already present. Can't override"
+      when: 
+        - ansible_failed_result.results.0.status == 403
+      delegate_to: localhost
