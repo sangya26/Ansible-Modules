@@ -1,0 +1,18 @@
+- name: create a windows task scheduler
+  community.windows.win_scheduled_task:
+    name: "Name for scheduler eg here - run schedule master type 0"
+    description: Run my task weekly
+    actions:
+    - path: D:\your\path
+      arguments: main.py prod 0
+      working_directory: "{{ scheduler_path }}"
+    triggers:
+    - type: weekly
+      days_of_week: ['monday','tuesday','wednesday','thursday','friday']
+      start_boundary: '2024-05-23' #date from where you want to start
+    weeks_interval: 1
+    state: present
+    enabled: yes
+    run_level: highest
+    run_as_user: Administrator
+    run_only_if_user_logged_in: no
