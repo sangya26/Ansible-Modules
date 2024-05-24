@@ -1,0 +1,80 @@
+---
+
+- name: add user to local admin group
+  win_group_membership:
+    name: Administrators
+    members: "{{ id }}"
+    state: present
+
+- name: create an installer folder
+  win_file:
+    path: "{{ destination_filepath }}"
+    state: present
+
+- name: copy installer
+  block:
+    - get_url:
+        url: "{{ sql_server_instller_url }}"
+        dest: "./{{ sql_server_installer }}"
+        delegate_to: localhost
+
+    - win_copy:
+        src: "./{{ sql_server_installer }}"
+        dest: "{{ destination_filepath }}"
+
+- name: get secrets
+  azure.azcollection.azure_rm_keyvaultsecret_info:
+    vault_uri: "{{ key_vault_uri }}"
+    name: "{{ secret }}"
+    subscription_id: "sub id"
+    client_id: "client id"
+    secret: "secre"
+    tenant: "tenant"
+  register: get_secrets
+  delegate_to: localhost  
+
+- name: variablize id password 
+  set_fact:
+    id_password: "{{ get_secrets.secrets.0.secret }}"
+  no_log: true
+
+- name: copy configuration file 
+  win_template:
+    src: "templates/{{ sql_server_conf }}"
+    dest: "{{ destination_filepath }}\\{{ sql_server_conf | regex_replace('.j2','') }}"
+    force: yes
+
+- name: executing exe and msi file 
+  win_package:
+    path: "{{ destination_filepath }}\\{{ sql_server_installer }}"
+    arguments: "/Q /IACCEPTSQLSERVERLICENSETERMS /ACTION='install' /ConfigurationFile={{ destination_filepath }}\\{{ sql_server_conf | regex_replace('.j2','') }} /IAcceptSQLServerLicenseTerms"
+  become: true
+  become_method: runas 
+  ignore_errors: true
+  vars:
+    ansible_user: "{{ id }}"
+    ansible_password: "{{ id_password }}"
+    ansible_become_user: "{{ id }}"
+    ansible_become_password: "{{ id_password }}"
+  register: sql_install_info
+
+- set_fact:
+    already_present: "{{ (sql_install_info.stdout | regex_search('The requested features may already be installed')) | length > 0 }}"
+  when:
+    - sql_install_info.stdout id defined
+
+- fail: 
+    msg: "{{ sql_install_info.stdout_lines }}"
+  when:
+    - sql_install_info is failed
+    - sql_install_info.stdout is defined 
+    - not already_present
+
+- name: delete installer 
+  win_file: 
+    path: "{{ destination_filepath[:-1] }}"
+    state: absent
+
+
+
+

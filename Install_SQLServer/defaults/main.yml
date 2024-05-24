@@ -1,0 +1,7 @@
+destination_filepath: <path>
+sql_server_instller_url: <url>
+sql_server_installer: "{{ sql_server_instller_url.split('/')[-1] }}"
+sql_server_conf: "ConfigurationFile.ini.j2"
+id: <id>
+secret: <secret>
+key_vault_uri: <kv address>
