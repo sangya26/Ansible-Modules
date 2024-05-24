@@ -1,0 +1,16 @@
+---
+
+- name: install pyodbc
+  block:
+    - name: download pyodbc package
+      win_get_url:
+        url: "{{ pyodbc_url }}"
+        dest: "{{ path }}"
+        url_username: "user"
+        url_password: "password"
+        url_timeout: 90
+
+    - name: install pyodbc 
+      win_shell: pip install pyodbc-version.....whl
+      args:
+        chdir: "{{ directory }}"

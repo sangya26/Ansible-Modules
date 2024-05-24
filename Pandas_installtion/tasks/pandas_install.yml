@@ -1,0 +1,18 @@
+---
+
+- name: install pandas
+  block:
+    - name: download pandas package
+      win_get_url:
+        url: "{{ pandas_url }}"
+        dest: "{{ path }}"
+        url_username: "user"
+        url_password: "password"
+        url_timeout: 90
+
+    - name: install pyodbc 
+      win_shell: pip install {{ item }}
+      args:
+        chdir: "{{ directory }}"
+      with_items: 
+        - "{{ package_name }}"

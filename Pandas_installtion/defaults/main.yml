@@ -1,0 +1,4 @@
+pandas_url: <path>
+path: <install path>
+directory: <destination path>
+package_name: ["numpy...","pythondateutil.."]
