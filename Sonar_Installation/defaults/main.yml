@@ -1,0 +1,3 @@
+src_path: <path>
+SONAR_SCANNER_VERSION: <your required version>
+SONAR_SCANNER_HOME: <you home path>

@@ -1,0 +1,39 @@
+---
+
+- name: get status of scanner source archive
+  stat: 
+    path: "{{ src_path }}/sonar_scanner-cli-{{ SONAR_SCANNER_VERSION }}.zip"
+  register: pkg 
+
+- name: get status of current certs 
+  stat: 
+    path: "/etc/pki/ca-trust/extracted/java/cacerts"
+  register: cert 
+
+- name: create destination directory
+  file:
+    path: "{{ SONAR_SCANNER_HOME }}"
+    state: directory
+    mode: '0755'
+  when: pkg.stat.exists
+
+- name: install from source
+  unarchive:
+    src: "{{ pkg.stst.path }}"
+    dest: /opt
+    mode: '0755'
+    remote_src: yes 
+  when: pkg.stat.exists
+
+- name: link current certs into scanner directory 
+  file:
+    src: "{{ cert.stat.path }}"
+    dest: "{{ SONAR_SCANNER_HOME }}/jre/lib/security/cacerts"
+    state: link
+    owner: root
+    group: root 
+    mode: '0755'
+    force: true 
+  when:
+  - cert.stat.exists
+  - pkg.stat.exists
