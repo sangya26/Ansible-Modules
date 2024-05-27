@@ -1,0 +1,8 @@
+tmp_folder: /tmp/nessus
+
+NESSUS_SRC_PATH: <path>
+NESSUS_GPG_FILE: <file>
+NESSUS_RPM_EL8_FILE: <file>
+NESSUS_RPM_EL9_FILE: <file> 
+NESSUS_LINKING_KEY: <KEY>
+NESSUS_AGENT_GROUP: <GROUP>

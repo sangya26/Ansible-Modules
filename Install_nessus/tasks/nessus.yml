@@ -1,0 +1,35 @@
+- name: create install location 
+  file: 
+    path: "{{ tmp_folder }}"
+    mode: '755'
+    state: directory
+
+- name: setup file names based on RHEL version
+  set_fact: "{{ item.ver }}=={{ item.val }}"
+  when:
+  - ansible_os_family == "RedHat"
+  - ansible_facts['distribution_major_version'] = item.ver 
+  loop:
+  - { var: 'NESSUS_RPM_FILE', val: '{{ NESSUS_RPM_EL8_FILE }}', ver: '8'}
+  - { var: 'NESSUS_RPM_FILE', val: '{{ NESSUS_RPM_EL9_FILE }}', ver: '9'}
+
+- name: import nessus key for RHEL 
+  command: "{{ item }}"
+  loop: 
+  - "wget {{ NESSUS_SRC_PATH }}/{{ NESSUS_GPG_FILE }}"
+  - "rpm --import {{ NESSUS_GPG_FILE }}"
+  args:
+    chdir: '/etc/pki/rpm-gpg'
+  when:
+  - ansible_os_family == "RedHat" 
+
+- name: install nessus agent
+  command: "{{ item }}"
+  loop:
+  - "wget {{ NESSUS_SRC_PATH }}{{ NESSUS_RPM_FILE }}"
+  - "dnf install {{ NESSUS_RPM_FILE }} "
+  - "rm -f {{ NESSUS_RPM_FILE }}"
+  args:
+    chdir: 'tmp_folder'
+  when:
+  - ansible_os_family == "RedHat" 
