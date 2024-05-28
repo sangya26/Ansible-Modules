@@ -1,0 +1,10 @@
+concurrent = {{ gitlab_runner_concurrent_jobs }}
+check_interval = {{ gitlab_runner_check_interval }}
+shutdown_timeout = 0
+
+[[runners]]
+    executor = "shell"
+    shell = "powershell"
+    builds_dir = '{{ gitlab_runner_directory }}\builds'
+    [runners.custom_build_dir]
+    enabled = true

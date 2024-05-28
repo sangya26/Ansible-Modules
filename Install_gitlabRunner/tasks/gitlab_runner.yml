@@ -1,0 +1,90 @@
+---
+
+- name: create runner directory
+  ansible.windows.win_file:
+    path: '{{ gitlab_runner_directory }}'
+    state: directory
+
+- name: edit runner directory pem
+  ansible.windows.win_acl:
+    user: users
+    path: '{{ gitlab_runner_directory }}'
+    type: allow
+    rights: ExecuteFile.Write
+
+- name: check service status
+  ansible.windows.win_service:
+    name: 'gitlab-runner'
+  register: runner_service
+
+- name: stop service 
+  win_service: 
+    name: 'gitlab-runner'
+    state: stopped
+  when: (runner_service.exists) or (runner_service == 'running')
+
+- name: install gitlab runner 
+  ansible.windows.win_get_url:
+    url: '{{ gitlab_runner_binary_url }}'
+    dest: '{{ gitlab_runner_directory }}\gitlab-runner.exe'
+    follow_redirects: all
+    proxy_url: http://web-proxy....com
+
+- name: add gitlab runner to path 
+  ansible.windows.win_path:
+    elements:
+    - '{{ gitlab_runner_directory }}'
+
+- name: check service status 
+  ansible.windows.win_service:
+    name: 'gitlab-runner'
+  register: runner_service
+
+- name: check config file 
+  ansible.windows.win_stat:
+    path: '{{ gitlab_runner_directory }}\config.toml'
+    get_checksum: yes
+    checksum_algorithm: sha256
+  register: config 
+
+- name: unregister all runners 
+  when: 
+    - config.stat.exists == true
+    - runner_service.exists == true 
+  ansible.windows.win_command:
+    cmd: gitlab-runner unregister --config "{{ gitlab_runner_directory }}\config.toml" --all-runners
+
+- name: touch config file
+  when: 
+    - config.stat.exists == false
+  ansible.windows.win_file:
+    path: '{{ gitlab_runner_directory }}\config.toml' 
+    state: touch 
+
+- name: create config template 
+  ansible.windows.win_template:
+    src: config.toml.j2
+    dest: '{{ gitlab_runner_directory }}\config-tmpl.toml' 
+
+- name: register gitlab runner  
+  ansible.windows.win_command:
+    cmd: 'gitlab-runner register --config {{ gitlab_runner_directory }}\config.toml --template-config {{ gitlab_runner_directory}}\config-tmpl.toml --name {{ gitlab_runner_name }} --non-interactive --url {{ gitlab_url }} --registration_token {{ item }} --tag-list {{ gitlab_runner_tags }} --run-untagged={{gitlab_runner_run_untagged}}'
+  loop: "{{ gitlab_runner_registration_tokens }}"
+
+- name: install gitlab runner  
+  ansible.windows.win_command:
+    cmd: 'gitlab-runner install --config {{ gitlab_runner_directory }}\config.toml --working-directory {{ gitlab_runner_directory }}'
+  when: not (runner_service.exists)
+
+- name: start gitlab runner
+  ansible.windows.win_service:
+    name: 'gitlab-runner'
+    state: 'started'
+  register: start_service
+
+- name: restart gitlab runner 
+  when:
+    - start_service.changed != true 
+  ansible.windows.win_service:
+    name: 'gitlab-runner'
+    state: 'restarted'

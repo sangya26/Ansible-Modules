@@ -1,0 +1,10 @@
+gitlab_runner_directory: C:/Gitlab-Runner
+gitlab_runner_binary_url: 'https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-windows-amd64.exe'
+gitlab_url: 'https://gitlab.abc.com'
+gitlab_runner_registration_tokens: ['<your token>']
+gitlab_runner_name: <name>
+gitlab_runner_tags: "windows"
+gitlab_runner_run_untagged: false 
+gitlab_runner_concurrent_jobs: 20
+gitlab_runner_check_interval: 0
+gitlab_pat_token: "<token>"
